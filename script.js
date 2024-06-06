@@ -7,7 +7,7 @@
 // Data
 const account1 = {
   owner: 'Jonas Schmedtmann',
-  movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
+  movements: [200, 450, -400, 3000, -650, -130, 70, 1300, 250, -700],
   interestRate: 1.2, // %
   pin: 1111,
 
@@ -20,6 +20,8 @@ const account1 = {
     '2020-05-27T17:01:17.194Z',
     '2020-07-11T23:36:17.929Z',
     '2020-07-12T10:51:36.790Z',
+    '2024-06-03T12:01:20.894Z',
+    '2024-06-05T12:01:20.894Z',
   ],
   currency: 'EUR',
   locale: 'pt-PT', // de-DE
@@ -87,23 +89,69 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-const displayTransactions = function (transactions, sort = false) {
+const calculateDaysPassed = (date1, date2) =>
+  Math.round(Math.abs(date1 - date2) / (1000 * 60 * 60 * 24));
+
+const formatTransactionDate = function (transactionDate, locale = 'en-CA') {
+  const now = new Date();
+  const daysPassed = calculateDaysPassed(now, transactionDate);
+
+  if (daysPassed === 0) {
+    return 'Today';
+  }
+  if (daysPassed === 1) {
+    return 'Yesterday';
+  }
+  if (daysPassed <= 3) {
+    return `${daysPassed} days ago`;
+  }
+
+  const options = {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  };
+  return new Date(transactionDate).toLocaleString(locale, options);
+};
+
+const formatCurrency = function (value, locale, currency) {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+  }).format(value);
+};
+
+const displayTransactions = function (account, sort = false) {
   containerMovements.innerHTML = '';
 
   const movements = sort
-    ? transactions.slice().sort((a, b) => a - b)
-    : transactions;
+    ? account.movements.slice().sort((a, b) => a - b)
+    : account.movements;
 
   movements.forEach(function (transaction, index) {
     const transactionType = transaction > 0 ? 'deposit' : 'withdrawal';
+
+    const transactionDate = account.movementsDates[index];
+    const transactionDateFormatted = formatTransactionDate(
+      new Date(transactionDate),
+      account.locale
+    );
+
+    const transactionFormatted = formatCurrency(
+      transaction,
+      account.locale,
+      account.currency
+    );
 
     const html = `
       <div class="movements__row">
         <div class="movements__type movements__type--${transactionType}">${
       index + 1
     } ${transactionType}</div>
-        <div class="movements__value">${transaction.toFixed(2)}€</div>
+    <div class="movements__date">${transactionDateFormatted}</div>
+        <div class="movements__value">${transactionFormatted}</div>
       </div>
+      
     `;
 
     containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -115,7 +163,14 @@ const calculateDisplayBalance = function (account) {
     (accumulator, transaction) => accumulator + transaction,
     0
   );
-  labelBalance.textContent = `${account.balance.toFixed(2)}€`;
+
+  const balanceFormatted = formatCurrency(
+    account.balance,
+    account.locale,
+    account.currency
+  );
+
+  labelBalance.textContent = `${balanceFormatted}`;
 };
 
 const updateSummaryTrasactions = function (account) {
@@ -123,12 +178,20 @@ const updateSummaryTrasactions = function (account) {
     .filter(movement => movement > 0)
     .reduce((accumulator, movement) => accumulator + movement, 0);
 
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
+  labelSumIn.textContent = formatCurrency(
+    incomes,
+    account.locale,
+    account.currency
+  );
 
   const outcomes = account.movements
     .filter(movement => movement < 0)
     .reduce((accumulator, movement) => accumulator + movement, 0);
-  labelSumOut.textContent = `${Math.abs(outcomes).toFixed(2)}€`;
+  labelSumOut.textContent = formatCurrency(
+    Math.abs(outcomes),
+    account.locale,
+    account.currency
+  );
 
   const interestRate = account.interestRate / 100;
 
@@ -137,7 +200,11 @@ const updateSummaryTrasactions = function (account) {
     .map(deposit => deposit * interestRate)
     .filter(interest => interest >= 1)
     .reduce((accumulator, interest) => accumulator + interest, 0);
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+  labelSumInterest.textContent = formatCurrency(
+    interest,
+    account.locale,
+    account.currency
+  );
 };
 
 const createUsernames = function (accounts) {
@@ -153,7 +220,7 @@ const createUsernames = function (accounts) {
 createUsernames(accounts);
 
 const updateTransactionsUI = function (account) {
-  displayTransactions(currentAccount.movements);
+  displayTransactions(currentAccount);
   calculateDisplayBalance(currentAccount);
   updateSummaryTrasactions(currentAccount);
 };
@@ -177,6 +244,15 @@ btnLogin.addEventListener('click', function (event) {
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
 
+    const now = new Date();
+    labelDate.textContent = now.toLocaleString(currentAccount.locale, {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     updateTransactionsUI(currentAccount);
   }
 });
@@ -194,8 +270,13 @@ btnTransfer.addEventListener('click', function (event) {
     amount <= currentAccount.balance &&
     receiverAccount.username !== currentAccount.username
   ) {
+    const transactionDate = new Date().toISOString();
+
     currentAccount.movements.push(-amount);
+    currentAccount.movementsDates.push(transactionDate);
+
     receiverAccount.movements.push(amount);
+    receiverAccount.movementsDates.push(transactionDate);
     updateTransactionsUI(currentAccount);
   }
 
@@ -211,6 +292,10 @@ btnLoan.addEventListener('click', function (event) {
     currentAccount.movements.some(movement => movement >= amount * 0.1)
   ) {
     currentAccount.movements.push(amount);
+
+    const transactionDate = new Date().toISOString();
+    currentAccount.movementsDates.push(transactionDate);
+
     updateTransactionsUI(currentAccount);
   }
 
