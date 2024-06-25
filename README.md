@@ -23,7 +23,7 @@ Bankist replicates essential functionalities found in typical bank applications.
 
 ## How to log in
 
-These are the credentials to use the bank functionality. This project does not have registration functionality.
+These are the credentials to use the bank functionality. This project does not have registration functionality. Use usernames in lowercase.
 
 | Username | Password |
 | -------- | -------- |
