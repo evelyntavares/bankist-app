@@ -20,3 +20,13 @@ Bankist replicates essential functionalities found in typical bank applications.
 - HTML
 - CSS
 - JavaScript
+
+## How to log in
+
+These are the credentials to use the bank functionality. This project does not have registration functionality.
+
+| Username | Password |
+| -------- | -------- |
+| ls       | 1111     |
+| hs       | 2222     |
+| dv       | 3333     |
