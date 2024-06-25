@@ -4,7 +4,7 @@ Bankist is a fictional and simple online banking application.
 
 ## What is Bankist?
 
-Bankist replicates essential functionalities found in typical bank applications. Introduced by Jonas Schmedtmann, this project serves as a practical learning exercise for DOM manipulation and user interaction.
+Bankist replicates essential functionalities found in typical bank applications. Introduced by Jonas Schmedtmann, this project serves as a practical learning exercise for working with arrays, dates, and timers.
 
 ## Features
 
