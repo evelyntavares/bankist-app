@@ -19,7 +19,7 @@ Bankist replicates essential functionalities found in typical bank applications.
 
 - HTML
 - CSS
-- JavaScript
+- Vanilla JavaScript
 
 ## How to log in
 
